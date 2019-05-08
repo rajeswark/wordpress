@@ -1,0 +1,98 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Web SG
+      ec2_group:
+         name: websg
+         description: allow the traffic
+         region: us-east-2
+         vpc_id: vpc-bad7ecd2
+         aws_access_key: AKIAU4HF4M6G54ABJZKS 
+         aws_secret_key: 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
+         rules:
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+
+    - name: DB SG
+      ec2_group:
+         name: dbsg
+         description: allow the traffic
+         region: us-east-2
+         vpc_id: vpc-bad7ecd2
+         aws_access_key: AKIAU4HF4M6G54ABJZKS
+         aws_secret_key: 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
+         rules:
+          - proto: tcp
+            from_port: 22       
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+
+          - proto: tcp
+            from_port: 3306
+            to_port: 3306
+            cidr_ip: 0.0.0.0/0
+
+
+
+    - name: WEB Instance
+      ec2:
+        aws_access_key: AKIAU4HF4M6G54ABJZKS
+        aws_secret_key: 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
+        key_name: Web Host Key
+        region: us-east-2
+        group: websg
+        instance_type: t2.micro
+        image: ami-0c55b159cbfafe1f0
+        wait: yes
+        wait_timeout: 500
+        count: 1
+        instance_tags:
+          Name: Webserver
+        monitoring: yes
+        vpc_subnet_id: subnet-2e8ead46
+        assign_public_ip: yes
+        user_data:
+                    #!/bin/bash 
+                      sudo apt-get update -y && sudo apt-get upgrade -y
+                                             
+                      echo -e "$Cyan \n Installing Apache2 $Color_Off"
+                      sudo apt-get install apache2
+
+
+    - name: DB Instance
+      ec2:
+        aws_access_key: AKIAU4HF4M6G54ABJZKS
+        aws_secret_key: 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
+        key_name: DB Host Key
+        region: us-east-2
+        group: dbsg
+        instance_type: t2.micro
+        image: ami-0c55b159cbfafe1f0
+        wait: yes
+        wait_timeout: 500
+        count: 1
+        instance_tags:
+          Name: DBserver
+        monitoring: yes
+        vpc_subnet_id: subnet-2e8ead46
+        assign_public_ip: yes
+        user_data:
+             
+             #!/bin/bash 
+              
+               sudo apt-get update
+               sudo apt-get install -y mysql-server
+               sudo apt-get install -y mysql-client
+               sudo apt-get install -y libmysqlclient-dev
+               sudo apt-get install -y python-pip
+               mysql_secure_installation                        
